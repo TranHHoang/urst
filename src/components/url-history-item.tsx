@@ -1,52 +1,73 @@
+"use client";
+
+import { formatDistanceToNow } from "date-fns";
+import type { UrlData } from "@/lib/storage";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Copy, ExternalLink } from "lucide-react";
+import { useState } from "react";
 
 interface UrlHistoryItemProps {
-  originalUrl: string;
-  shortUrl: string;
-  createdAt: string;
-  clicks: number;
+  data: UrlData;
+  onDelete: () => Promise<void>;
 }
 
-export function UrlHistoryItem({
-  originalUrl,
-  shortUrl,
-  createdAt,
-  clicks,
-}: UrlHistoryItemProps) {
+export function UrlHistoryItem({ data, onDelete }: UrlHistoryItemProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { original_url, code, clicks, created_at } = data;
+  const shortUrl = `${window.location.origin}/${code}`;
+  const timeAgo = formatDistanceToNow(new Date(created_at), {
+    addSuffix: true,
+  });
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await onDelete();
+    } catch (error) {
+      console.error("Error deleting URL:", error);
+      alert("Failed to delete URL");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="grid gap-3">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="font-medium text-sm truncate max-w-[300px] sm:max-w-[400px]">
-                {originalUrl}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <a
-                  href={`https://${shortUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary flex items-center hover:underline"
-                >
-                  {shortUrl}
-                  <ExternalLink className="ml-1 h-3 w-3" />
-                </a>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <Copy className="h-3 w-3" />
-                  <span className="sr-only">Copy URL</span>
-                </Button>
-              </div>
+    <div className="p-4 rounded-lg border bg-card text-card-foreground">
+      <div className="space-y-2">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium leading-none">{shortUrl}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                type="button"
+                aria-label="Delete URL"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Delete URL</span>
+              </Button>
             </div>
-            <div className="text-right text-sm">
-              <p className="text-muted-foreground">{createdAt}</p>
-              <p className="font-medium">{clicks} clicks</p>
-            </div>
+            <p className="text-sm text-muted-foreground truncate max-w-[300px]">
+              {original_url}
+            </p>
+          </div>
+          <div className="text-sm text-muted-foreground text-right">
+            <p>{timeAgo}</p>
+            <p>{clicks} clicks</p>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

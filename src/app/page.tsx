@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Link2 } from "lucide-react";
-import { UrlHistoryItem } from "@/components/url-history-item";
+import { UrlHistory } from "@/components/url-history";
 import { GoogleLoginButton } from "@/components/google-login-button";
 import { QrCodeResult } from "@/components/qr-code-result";
 
@@ -21,13 +20,38 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [shortUrl, setShortUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (url) {
-      // In a real app, this would call an API to shorten the URL
-      setShortUrl("linkbr.ef/xyz123");
+    if (!url) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/shorten", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to shorten URL");
+      }
+
+      setShortUrl(data.shortUrl);
       setShowResult(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to shorten URL");
+      setShowResult(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,12 +94,15 @@ export default function Home() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
-                <Button type="submit">
-                  Shorten
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Shortening..." : "Shorten"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </form>
+
+              {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
               {showResult && (
                 <QrCodeResult originalUrl={url} shortUrl={shortUrl} />
@@ -83,29 +110,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Your links</h2>
-            <div className="space-y-3">
-              <UrlHistoryItem
-                originalUrl="https://example.com/very/long/url/that/needs/shortening/and/is/quite/lengthy"
-                shortUrl="linkbr.ef/a1b2c3"
-                createdAt="2 hours ago"
-                clicks={12}
-              />
-              <UrlHistoryItem
-                originalUrl="https://another-example.com/blog/post/2023/05/15/how-to-create-short-links"
-                shortUrl="linkbr.ef/d4e5f6"
-                createdAt="Yesterday"
-                clicks={45}
-              />
-              <UrlHistoryItem
-                originalUrl="https://docs.example.org/documentation/getting-started/introduction"
-                shortUrl="linkbr.ef/g7h8i9"
-                createdAt="Last week"
-                clicks={128}
-              />
-            </div>
-          </div>
+          <UrlHistory />
         </div>
       </main>
 
