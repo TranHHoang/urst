@@ -1,68 +1,43 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { urlStorage } from "@/lib/storage";
-
-function generateShortCode(): string {
-  // Generate a random 6-character string
-  return crypto.randomBytes(3).toString("hex");
-}
-
-function normalizeUrl(url: string): string {
-  const normalizedUrl = url.trim();
-
-  try {
-    // Try parsing as is first
-    new URL(normalizedUrl);
-    return normalizedUrl;
-  } catch {
-    // If parsing fails, try adding https://
-    try {
-      new URL(`https://${normalizedUrl}`);
-      return `https://${normalizedUrl}`;
-    } catch {
-      throw new Error("Invalid URL");
-    }
-  }
-}
+import { generateKey } from "@/lib/key-gen";
+import { isValidUrl, normalizeUrl } from "@/lib/url-utils";
 
 export async function POST(request: Request) {
   try {
     const { url } = await request.json();
 
-    if (!url) {
-      return NextResponse.json({ error: "URL is required" }, { status: 400 });
+    if (!url || !isValidUrl(url)) {
+      return NextResponse.json(
+        { error: "Invalid URL provided" },
+        { status: 400 }
+      );
     }
 
-    // Validate and normalize URL
-    let normalizedUrl;
-    try {
-      normalizedUrl = normalizeUrl(url);
-    } catch {
-      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    // Normalize the URL to ensure consistent keys
+    const normalizedUrl = normalizeUrl(url);
+
+    // Generate deterministic key based on the normalized URL
+    const code = generateKey(normalizedUrl);
+
+    // Check if URL already exists
+    const existingUrl = await urlStorage.get(code);
+    if (existingUrl === normalizedUrl) {
+      // URL already shortened, return existing code
+      const shortUrl = `${request.headers.get("host")}/${code}`;
+      return NextResponse.json({ shortUrl });
     }
 
-    // Generate a unique short code
-    let shortCode = generateShortCode();
-    while (await urlStorage.has(shortCode)) {
-      shortCode = generateShortCode();
-    }
-
-    // Store the URL mapping
-    await urlStorage.set(shortCode, normalizedUrl);
-
-    const host = request.headers.get("host");
-    const protocol = request.headers.get("x-forwarded-proto") || "http";
+    // Store the URL if it's new
+    await urlStorage.set(code, normalizedUrl);
 
     // Return the shortened URL
-    return NextResponse.json({
-      originalUrl: normalizedUrl,
-      shortCode,
-      shortUrl: `${protocol}://${host}/${shortCode}`,
-    });
+    const shortUrl = `${request.headers.get("host")}/${code}`;
+    return NextResponse.json({ shortUrl });
   } catch (error) {
     console.error("Error shortening URL:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to shorten URL" },
       { status: 500 }
     );
   }
