@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from "react";
 import type { UrlData } from "@/lib/storage";
 import { UrlHistoryItem } from "./url-history-item";
+import { useSession } from "next-auth/react";
 
 export function UrlHistory() {
   const [urls, setUrls] = useState<UrlData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { data: session } = useSession();
 
   const fetchUrls = async () => {
     console.log("Fetching URLs...");
@@ -27,7 +29,7 @@ export function UrlHistory() {
 
   useEffect(() => {
     fetchUrls();
-  }, []);
+  }, [session]); // Refetch when session changes
 
   const handleDelete = useCallback(async (code: string) => {
     console.log("Parent: Handling delete for code:", code);

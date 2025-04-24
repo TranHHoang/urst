@@ -13,13 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Link2 } from "lucide-react";
 import { UrlHistory } from "@/components/url-history";
-import { GoogleLoginButton } from "@/components/google-login-button";
+import { UserMenu } from "@/components/user-menu";
 import { QrCodeResult } from "@/components/qr-code-result";
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [shortUrl, setShortUrl] = useState("");
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,6 +47,7 @@ export default function Home() {
       }
 
       setShortUrl(data.shortUrl);
+      setExpiresAt(data.expiresAt);
       setShowResult(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to shorten URL");
@@ -63,7 +65,7 @@ export default function Home() {
             <Link2 className="h-5 w-5" />
             <span className="font-medium">urst</span>
           </div>
-          <GoogleLoginButton />
+          <UserMenu />
         </div>
       </header>
 
@@ -105,7 +107,11 @@ export default function Home() {
               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
               {showResult && (
-                <QrCodeResult originalUrl={url} shortUrl={shortUrl} />
+                <QrCodeResult
+                  originalUrl={url}
+                  shortUrl={shortUrl}
+                  expiresAt={expiresAt}
+                />
               )}
             </CardContent>
           </Card>

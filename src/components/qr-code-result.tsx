@@ -2,13 +2,19 @@ import { Button } from "@/components/ui/button";
 import { Copy, Download, QrCode } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { formatDistanceToNow } from "date-fns";
 
 interface QrCodeResultProps {
   originalUrl: string;
   shortUrl: string;
+  expiresAt: string | null;
 }
 
-export function QrCodeResult({ originalUrl, shortUrl }: QrCodeResultProps) {
+export function QrCodeResult({
+  originalUrl,
+  shortUrl,
+  expiresAt,
+}: QrCodeResultProps) {
   const [copied, setCopied] = useState(false);
   const [qrImage, setQrImage] = useState<string>("");
   const qrRef = useRef<HTMLDivElement>(null);
@@ -129,6 +135,13 @@ export function QrCodeResult({ originalUrl, shortUrl }: QrCodeResultProps) {
                 {copied ? "Copied!" : "Copy"}
               </Button>
             </div>
+            {expiresAt && (
+              <p className="text-sm text-yellow-600 mt-1">
+                Expires{" "}
+                {formatDistanceToNow(new Date(expiresAt), { addSuffix: true })}{" "}
+                - Log in to create permanent links
+              </p>
+            )}
           </div>
           <div>
             <p className="text-sm text-muted-foreground mb-1">Original URL:</p>

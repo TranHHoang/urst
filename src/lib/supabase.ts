@@ -13,8 +13,11 @@ export const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   {
     auth: {
-      persistSession: false, // Don't persist session as this is server-side only
+      persistSession: false,
       autoRefreshToken: false,
+    },
+    db: {
+      schema: "public",
     },
   }
 );

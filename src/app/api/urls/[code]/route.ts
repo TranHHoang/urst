@@ -3,10 +3,10 @@ import { urlStorage } from "@/lib/storage";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { code: string } }
-) {
+  { params }: { params: Promise<{ code: string }> }
+): Promise<NextResponse> {
   try {
-    const code = params.code;
+    const { code } = await params;
     const success = await urlStorage.delete(code);
 
     if (!success) {

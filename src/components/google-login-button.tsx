@@ -1,8 +1,28 @@
 import { Button } from "@/components/ui/button";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export function GoogleLoginButton() {
+  const { data: session } = useSession();
+
+  if (session) {
+    return (
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-muted-foreground">
+          {session.user?.email}
+        </span>
+        <Button variant="outline" onClick={() => signOut()}>
+          Sign out
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <Button variant="outline" className="flex items-center gap-2">
+    <Button
+      variant="outline"
+      className="flex items-center gap-2"
+      onClick={() => signIn("google")}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"

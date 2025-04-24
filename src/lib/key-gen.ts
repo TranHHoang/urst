@@ -101,13 +101,12 @@ export function getSafeCapacity(): number {
 }
 
 /**
- * Gets collision probability for a given number of URLs.
+ * Gets collision probability.
  * Note: With deterministic keys, collisions only happen when URLs are identical,
  * which is exactly what we want.
  *
- * @param numUrls Number of URLs to calculate probability for
  * @returns Always returns 0 since identical URLs get identical keys
  */
-export function getCollisionProbability(numUrls: number): number {
+export function getCollisionProbability(): number {
   return 0; // Deterministic keys only collide for identical URLs
 }
